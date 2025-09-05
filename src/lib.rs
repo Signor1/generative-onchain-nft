@@ -2,6 +2,7 @@
 #![cfg_attr(not(any(test, feature = "export-abi")), no_std)]
 
 mod base64;
+mod generator;
 
 #[macro_use]
 extern crate alloc;
