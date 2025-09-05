@@ -1,36 +1,22 @@
-//!
-//! Stylus Hello World
-//!
-//! The following contract implements the Counter example from Foundry.
-//!
-//! ```solidity
-//! contract Counter {
-//!     uint256 public number;
-//!     function setNumber(uint256 newNumber) public {
-//!         number = newNumber;
-//!     }
-//!     function increment() public {
-//!         number++;
-//!     }
-//! }
-//! ```
-//!
-//! The program is ABI-equivalent with Solidity, which means you can call it from both Solidity and Rust.
-//! To do this, run `cargo stylus export-abi`.
-//!
-//! Note: this code is a template-only and has not been audited.
-//!
-// Allow `cargo stylus export-abi` to generate a main function.
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
 #![cfg_attr(not(any(test, feature = "export-abi")), no_std)]
 
 #[macro_use]
 extern crate alloc;
 
+use alloc::string::String;
 use alloc::vec::Vec;
 
+use alloy_sol_types::SolValue;
+use openzeppelin_stylus::token::erc721::{self, Erc721};
+
 /// Import items from the SDK. The prelude contains common traits and macros.
-use stylus_sdk::{alloy_primitives::U256, prelude::*};
+use stylus_sdk::{
+    alloy_primitives::{FixedBytes, U256},
+    alloy_sol_types::sol,
+    crypto::keccak,
+    prelude::*,
+};
 
 // Define some persistent storage using the Solidity ABI.
 // `Counter` will be the entrypoint.
