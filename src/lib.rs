@@ -29,12 +29,14 @@ sol_storage! {
 
         uint256 mint_price;
         uint256 total_supply;
+        address owner;
         mapping(uint256 => bytes32) seeds;
     }
 }
 
 sol! {
     error InsufficientPayment();
+    error NotOwner();
 }
 
 #[derive(SolidityError)]
@@ -49,6 +51,7 @@ pub enum SquiggleError {
     InvalidApprover(erc721::ERC721InvalidApprover),
     InvalidOperator(erc721::ERC721InvalidOperator),
     InsufficientPayment(InsufficientPayment),
+    NotOwner(NotOwner),
 }
 
 impl From<erc721::Error> for SquiggleError {
@@ -71,7 +74,13 @@ impl From<erc721::Error> for SquiggleError {
 
 impl Squiggle {
     fn generate_seed(&self) -> FixedBytes<32> {
-        todo!()
+        let block_number = self.vm().block_number();
+        let msg_sender = self.vm().msg_sender();
+        let chain_id = self.vm().chain_id();
+
+        let hash_data = (block_number, msg_sender, chain_id).abi_encode_sequence();
+
+        keccak(&hash_data)
     }
 }
 
@@ -80,7 +89,10 @@ impl Squiggle {
 impl Squiggle {
     #[constructor]
     fn constructor(&mut self, mint_price: U256) -> Result<(), SquiggleError> {
-        todo!()
+        let owner = self.vm().msg_sender();
+        self.owner.set(owner);
+        self.mint_price.set(mint_price);
+        Ok(())
     }
 
     fn name(&self) -> String {
@@ -98,7 +110,42 @@ impl Squiggle {
 
     #[payable]
     fn mint(&mut self) -> Result<(), SquiggleError> {
-        todo!()
+        let msg_value = self.vm().msg_value();
+        let mint_price = self.mint_price.get();
+        let minter = self.vm().msg_sender();
+
+        if msg_value < mint_price {
+            return Err(SquiggleError::InsufficientPayment(InsufficientPayment {}));
+        }
+
+        let seed = self.generate_seed();
+
+        let token_id = self.total_supply.get();
+        self.seeds.setter(token_id).set(seed);
+        self.total_supply.set(token_id + U256::ONE);
+
+        self.erc721._mint(minter, token_id)?;
+
+        Ok(())
+    }
+
+    fn update_mint_price(&mut self, new_price: U256) -> Result<(), SquiggleError> {
+        let fn_caller = self.vm().msg_sender();
+        let owner = self.owner.get();
+
+        if fn_caller != owner {
+            return Err(SquiggleError::NotOwner(NotOwner {}));
+        }
+        self.mint_price.set(new_price);
+        Ok(())
+    }
+
+    fn get_contract_balance(&self) -> Result<U256, SquiggleError> {
+        if self.vm().msg_sender() != self.owner.get() {
+            return Err(SquiggleError::NotOwner(NotOwner {}));
+        }
+        let contract = self.vm().contract_address();
+        Ok(self.vm().balance(contract))
     }
 }
 
