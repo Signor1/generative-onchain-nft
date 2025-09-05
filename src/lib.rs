@@ -7,13 +7,11 @@ mod generator;
 #[macro_use]
 extern crate alloc;
 
-use std::collections::binary_heap;
-
 use alloc::string::String;
 use alloc::vec::Vec;
 
 use alloy_sol_types::SolValue;
-use openzeppelin_stylus::token::erc721::{self, extensions::consecutive, Erc721};
+use openzeppelin_stylus::token::erc721::{self, Erc721};
 
 /// Import items from the SDK. The prelude contains common traits and macros.
 use stylus_sdk::{
@@ -108,7 +106,10 @@ impl Squiggle {
 
     #[selector(name = "tokenURI")]
     fn token_uri(&self, token_id: U256) -> Result<String, SquiggleError> {
-        todo!()
+        let seed = self.seeds.get(token_id);
+        let generator = generator::SquiggleGenerator::new(seed);
+        let metadata = generator.metadata();
+        Ok(metadata)
     }
 
     #[payable]
@@ -165,6 +166,32 @@ mod test {
         let vm = TestVM::default();
         let mut contract = Squiggle::from(&vm);
 
-        todo!()
+        let initialize = contract.constructor(U256::from(100));
+        assert!(initialize.is_ok());
+
+        let mint_price = contract.mint_price.get();
+        assert_eq!(mint_price, U256::from(100));
+
+        let try_and_mint = contract.mint();
+        assert!(try_and_mint.is_err());
+
+        vm.set_value(U256::from(100));
+
+        let user_mint = contract.mint();
+        assert!(user_mint.is_ok());
+
+        let total_supply = contract.total_supply.get();
+        assert_eq!(total_supply, U256::from(1));
+
+        let get_metadata = contract.token_uri(U256::from(0));
+        assert!(get_metadata.is_ok());
+
+        let contract_bal = contract.get_contract_balance();
+        assert!(contract_bal.is_ok());
+
+        let new_mint_price = contract.update_mint_price(U256::from(150));
+        assert!(new_mint_price.is_ok());
+        let mint_price = contract.mint_price.get();
+        assert_eq!(mint_price, U256::from(150));
     }
 }
