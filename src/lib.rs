@@ -4,11 +4,13 @@
 #[macro_use]
 extern crate alloc;
 
+use std::collections::binary_heap;
+
 use alloc::string::String;
 use alloc::vec::Vec;
 
 use alloy_sol_types::SolValue;
-use openzeppelin_stylus::token::erc721::{self, Erc721};
+use openzeppelin_stylus::token::erc721::{self, extensions::consecutive, Erc721};
 
 /// Import items from the SDK. The prelude contains common traits and macros.
 use stylus_sdk::{
@@ -64,5 +66,55 @@ impl From<erc721::Error> for SquiggleError {
             erc721::Error::InvalidApprover(e) => SquiggleError::InvalidApprover(e),
             erc721::Error::InvalidOperator(e) => SquiggleError::InvalidOperator(e),
         }
+    }
+}
+
+impl Squiggle {
+    fn generate_seed(&self) -> FixedBytes<32> {
+        todo!()
+    }
+}
+
+#[public]
+#[inherit(Erc721)]
+impl Squiggle {
+    #[constructor]
+    fn constructor(&mut self, mint_price: U256) -> Result<(), SquiggleError> {
+        todo!()
+    }
+
+    fn name(&self) -> String {
+        String::from("Squiggle")
+    }
+
+    fn symbol(&self) -> String {
+        String::from("SQGL")
+    }
+
+    #[selector(name = "tokenURI")]
+    fn token_uri(&self, token_id: U256) -> Result<String, SquiggleError> {
+        todo!()
+    }
+
+    #[payable]
+    fn mint(&mut self) -> Result<(), SquiggleError> {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[no_mangle]
+    pub unsafe extern "C" fn emit_log(_pointer: *const u8, _len: usize, _: usize) {}
+
+    #[test]
+    fn test_squiggle() {
+        use stylus_sdk::testing::*;
+        let vm = TestVM::default();
+        let mut contract = Squiggle::from(&vm);
+
+        todo!()
     }
 }
