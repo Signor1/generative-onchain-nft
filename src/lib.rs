@@ -90,7 +90,7 @@ impl Squiggle {
 impl Squiggle {
     #[constructor]
     fn constructor(&mut self, mint_price: U256) -> Result<(), SquiggleError> {
-        let owner = self.vm().msg_sender();
+        let owner = self.vm().tx_origin();
         self.owner.set(owner);
         self.mint_price.set(mint_price);
         Ok(())
